@@ -1,0 +1,140 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authservice
+  labels:
+    app: authservice
+  annotations:
+    sidecar.istio.io/inject: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authservice
+  template:
+    metadata:
+      labels:
+        app: authservice
+    spec:
+      serviceAccountName: authservice
+      containers:
+        - name: authservice
+          image: authservice:latest-arm64 
+          imagePullPolicy: Never 
+          ports:
+            - name: authz
+              containerPort: 10003
+              protocol: TCP
+            - name: health
+              containerPort: 10004
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/authservice
+      volumes:
+        - name: config
+          configMap:
+            name: authservice-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: authservice
+  labels:
+    app: authservice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authservice
+spec:
+  ports:
+    - name: grpc
+      port: 10003
+      targetPort: 10003
+      protocol: TCP
+    - port: 10004
+      targetPort: 10004
+      name: grpc-health
+      protocol: TCP
+  selector:
+    app: authservice
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authservice-config
+data:
+  config.json: |
+    {
+      "listen_address": "0.0.0.0",
+      "listen_port": 10003,
+      "log_level": "debug",
+      "chains": [
+        {
+          "name": "idp_filter_chain",
+          "filters": [
+            {
+              "oidc": {
+                "configuration_uri": "http://host.k3d.internal:8081/realms/demo/.well-known/openid-configuration",
+                "callback_uri": "https://localhost:443/callback",
+                "client_id": "confidential-client",
+                "client_secret": "confidential-client-secret",
+                "id_token": {
+                  "header": "Authorization",
+                  "preamble": "Bearer "
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: authservice
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - istio-system/my-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /authservice
+        - uri:
+            prefix: /callback
+      route:
+        - destination:
+            host: authservice
+            port:
+              number: 10003
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: authservice-role
+rules:
+  - apiGroups: [""]
+    resources: ["secrets", "pods", "services", "authorizationpolicies", "requestauthentications"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["security.istio.io"]
+    resources: ["authorizationpolicies", "requestauthentications"]
+    verbs: ["get", "list", "watch", "write"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: authservice-role
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: authservice-role
+subjects:
+  - kind: ServiceAccount
+    name: authservice
+    namespace: default

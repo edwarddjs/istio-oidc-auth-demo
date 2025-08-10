@@ -1,0 +1,27 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: request-auth
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  jwtRules:
+    - issuer: http://host.k3d.internal:8081/realms/demo
+      jwksUri: http://host.k3d.internal:8081/realms/demo/protocol/openid-connect/certs
+      forwardOriginalToken: true
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: auth-policy
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  rules:
+    - from:
+        - source:
+            requestPrincipals: ["*"]

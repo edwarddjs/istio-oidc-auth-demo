@@ -1,0 +1,52 @@
+issuer: http://host.k3d.internal:5556/dex
+storage:
+  type: memory
+web:
+  http: 0.0.0.0:5556
+
+
+oauth2:
+  skipApprovalScreen: true
+  responseTypes: ["code"]
+
+staticClients:
+  - id: confidential-client
+    public: false
+    secret: confidential-client-secret
+    redirectUris:
+      - http://localhost/callback
+      - http://localhost:80/callback
+      - https://localhost/callback
+      - https://localhost:443/callback
+    name: Confidential Client
+    extraClaims:
+      groups: ["group1", "group2"]
+  - id: public-client
+    public: true
+    secret: public-client-secret
+    redirectUris:
+      - http://localhost/callback
+      - http://localhost:80/callback
+      - https://localhost/callback
+      - https://localhost:443/callback
+    name: Public Client
+    extraClaims:
+      groups: ["group1", "group2"]
+
+enablePasswordDB: true
+
+staticPasswords:
+  - id: user1
+    email: user1@test.com
+    hash: "$2a$12$5SsCpwo86kEuBCjm1Sazn.VjLXKNzUIetLriQDIKc0XQ6KvDMdG4S"
+    password: user1-password
+    name: User One
+    roles:
+      - ROLE_USER
+  - id: user2
+    email: user2@test.com
+    hash: "$2a$12$.ZM3djWocoyQov3jTt4i0uLeljzJ0RcNyeBxWsHdCbVw8z7ntrMGK" # Replace with actual bcrypt hash
+    password: user2-password
+    name: User Two
+    roles:
+      - ROLE_USER

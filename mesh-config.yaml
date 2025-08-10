@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: istio
+  namespace: istio-system
+data:
+  mesh: |
+    extensionProviders:
+      - name: authservice-grpc
+        envoyExtAuthzGrpc:
+          service: "authservice.default.svc.cluster.local"
+          port: "10003"

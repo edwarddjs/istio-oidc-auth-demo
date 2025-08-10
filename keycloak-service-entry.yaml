@@ -1,0 +1,26 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: keycloak-service-entry
+spec:
+  hosts:
+    -  host.k3d.internal
+  ports:
+    - number: 8081
+      name: http
+      protocol: HTTP
+  resolution: NONE
+  location: MESH_EXTERNAL
+
+# disabled tls for dex as it is not configured for it when run it on host via docker currently
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: keycloak-external-dr
+  namespace: default
+spec:
+  host: host.k3d.internal
+  trafficPolicy:
+    tls:
+      mode: DISABLE

@@ -1,0 +1,34 @@
+{
+  "realm": "demo",
+  "enabled": true,
+  "users": [
+    { 
+      "username": "user1", 
+      "firstName": "User",
+      "lastName": "One",
+      "enabled": true, 
+      "email": "user1@test.com",
+      "emailVerified": true, 
+      "credentials": [
+          { "type": "password", "value": "user1-password", "temporary": false }
+        ] 
+      }
+  ],
+  "clients": [
+    {
+      "clientId": "public-client",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "redirectUris": ["https://localhost/callback","https://localhost:443/callback","http://localhost/callback","http://localhost:80/callback"]
+    },
+    {
+      "clientId": "confidential-client",
+      "publicClient": false,
+      "secret": "confidential-client-secret",
+      "standardFlowEnabled": true,
+      "redirectUris": ["https://localhost/callback","https://localhost:443/callback","http://localhost/callback","http://localhost:80/callback"]
+    }
+  ]
+}
